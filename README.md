@@ -1,6 +1,7 @@
-======PassMaker======
-Wordlist creator with bias for words and dates.
+# PassMaker
 
+Wordlist creator with bias for words and dates.
+-
 This script is not optimized, and therefore should not be used with large sets of words and dates.
 
 
