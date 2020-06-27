@@ -2,8 +2,8 @@ import argparse
 import string
 import itertools
 
-LEET_MAP = str.maketrans('oOaAiIeEsS', '0044113355')
-LEETat_MAP = str.maketrans('oOaAiIeEsS', '00@@113355')
+LEET_MAP = str.maketrans('oOaAiIeE', '00441133') # does not include sS -> 5
+LEETat_MAP = str.maketrans('oOaAiIeE', '00@@1133')
 
 def init_argparser():
     parser = argparse.ArgumentParser(description="Simple tool for generating password wordlists biased for certain words and dates.")
@@ -13,9 +13,10 @@ def init_argparser():
     parser.add_argument('--leet', action='store_true', help='l33t mutagen')
     parser.add_argument('--leetat', action='store_true', help='l33t mutagen with aA -> @')
     parser.add_argument('-c', '--captalize', action='store_true', help='capitalize mutagen')
-    parser.add_argument('--wordsfile', help='file containing the words to be used.') 
-    parser.add_argument('--datesfile', help='file containing the dates to be used, each line should be in DD-MM-YYYY\n'
+    parser.add_argument('-w', '--wordsfile', help='file containing the words to be used.') 
+    parser.add_argument('-d', '--datesfile', help='file containing the dates to be used, each line should be in DD-MM-YYYY\n'
             'format, e.g: 16-04-1994; xx-04-1995; 16-xx-xxxx; etc')
+    parser.add_argument('-o', '--outputfile', help='output file to write wordlist.')
 
     args = parser.parse_args()
     return args
@@ -32,36 +33,44 @@ def gen_for_N(N, args, words, dates):
 
 def parse_words (args, opened_file):
     words = opened_file.read().splitlines()
-    input_list = set(words)
+    input_list = words.copy()
     for word in words :
-        if args.c:
-            input_list.add(word.capitalize())
-        if args.u:
-            input_list.add(word.upper())
+        if args.captalize:
+            input_list.append(word.capitalize())
+    words = input_list.copy()
+    for word in words :
+        if args.upper:
+            input_list.append(word.upper())
+    words = input_list.copy()
+    for word in words :
+        if args.leet:
+            input_list.append(w := word.translate(LEET_MAP))
+    words = input_list.copy()
+    for word in words :
+        if args.leetat:
+            input_list.append(word.translate(LEETat_MAP))
+
+    return input_list
 
 def parse_dates (opened_file):
     dates = opened_file.read().splitlines()
-    days, months, years = dates.split()
-    # remove the xx and sort
-    days = [x for x in days if x.lower() != 'xx'].sort(key=len, reverse=1)
-    months = [x for x in months if x.lower() != 'xx'].sort(key=len, reverse=1)
-    years = [x for x in years if x.lower() != 'xx'].sort(key=len, reverse=1)
+    numbers = [i for j in dates for i in j.split('-')]
+    # remove the xx and xxxx
+    numbers = [x for x in numbers if x.lower() != 'xx' and x.lower() != 'xxxx']
 
+    return numbers
 
-    dates = {'years': years, 'months': months, 'days': days}
-    return dates
-
+# short auxiliary function
 def _combination_len(combination_set):
     return sum([len(x) for x  in combination_set])
 
 
-""" hard way, fuckit
+#hard way, fuckit
 def combinations(S, minL, maxL, curr_comb=set(), ret=[]):
-    print(locals(), input())
     for s in S: 
         #####this#section#parses#dates####
-        special = ''
-        N = 1
+        special = '' # string to specify if current s is day or year
+        N = 1 #auxiliar counter
         if s.isdigit():     # digits will be treated in a special way
             if len(s) == 4: # 4-sized digit string will be interpreted as a year
                 special = 'y' 
@@ -70,7 +79,8 @@ def combinations(S, minL, maxL, curr_comb=set(), ret=[]):
                 special = 'd' 
             N = 2
         for i in range(N):
-            if i == 1:     # case where s is a year, month or day
+            real_s = s  
+            if i == 1:     # second case where s is a year, month or day
                 if special == 'y':
                     s = s[-2:] # get only last two digits to represent year.
                 if special == 'd':
@@ -78,65 +88,41 @@ def combinations(S, minL, maxL, curr_comb=set(), ret=[]):
             ##################################
 
             new_comb = curr_comb.union({s})
-            newS = S.difference(new_comb)
-            auxL = _combination_len(curr_comb) + len(s)
+            newS = S.difference(curr_comb.union({real_s}))
+
+            auxL =_combination_len(curr_comb) + len(s) 
             if minL <= auxL <= maxL:
                 ret.append(new_comb)
+                ret = combinations(newS, minL, maxL, new_comb, ret=ret)
             elif auxL < minL:
                 ret = combinations(newS, minL, maxL, new_comb, ret=ret)
     return ret
 
-"""
 
-def arranjos(S, minL, maxL):
-    auxcombinations = []
-    for i in range(len(S)):
-        auxcombinations.extend([c for c in itertools.combinations(S, i)])
-    combinations = [c for c in auxcombinations if minL <= _combination_len(c) <= maxL]
+def arranjos(combinations):
     arranjos = []
-    for c in combinations:
+    uniq = set(frozenset(i) for i in combinations)
+    for c in uniq:
         arranjos.extend([''.join(i) for i in itertools.permutations(c)])
     return arranjos
-    
 
-    
-    
-
-
-
-    
-
-
-    
-    
 
 def main(args):
     if args.wordsfile:
         with open(args.wordsfile, 'r') as f:
-            words = parse_words(f)
+            words = parse_words(args, f)
             assert len(max(words, key=len)) <= args.maxLen, "Wordsfile incompatible with maxLen."
     if args.datesfile:
         with open(args.datesfile, 'r') as f:
             dates = parse_dates(f)
             assert len(max(dates, key=len)) <= args.maxLen, "Datesfile incompatible with maxLen."
-    if args.capitalize:
-        words = [i.capitalize() for i in words]
+    fullset = set(words + dates)
+    fullset.remove('')
 
-    if args.upper:
-        words = [i.upper() for i in words]
-
-    if args.leet:
-        words = [i.translate(LEET_MAP) for i in words]
-
-    if args.leetat:
-        words = [i.translate(LEETAT_MAP) for i in words]
-
-    # run the 
-
-
-        
-
+    if args.outputfile:
+        with open(args.outputfile, 'w') as f:
+            f.write('\n'.join(A))
 
 if __name__ == '__main__':
     pass
-    #main(init_argparser())
+    main(init_argparser())
