@@ -2,9 +2,9 @@
 
 Wordlist creator with bias for words and dates.
 -
-Usage:
-
 ```
+usage: passbiaser.py [-h] [-u] [--leet] [--leetat] [-c] [--compress-md] [--compress-y] [-w WORDSFILE] [-d DATESFILE] [-o OUTPUTFILE] minLen maxLen
+
 Simple tool for generating password wordlists biased for certain words and dates.
 
 positional arguments:
@@ -16,7 +16,9 @@ optional arguments:
   -u, --upper           uppercase mutagen
   --leet                l33t mutagen
   --leetat              l33t mutagen with aA -> @
-  -c, --captalize       capitalize mutagen
+  -c, --capitalize      capitalize mutagen
+  --compress-md         compress months and days starting with 0 mutagen, e.g 02 -> 2
+  --compress-y          compress years from 4 digits to 2 mutagen, e.g 1978 -> 78
   -w WORDSFILE, --wordsfile WORDSFILE
                         file containing the words to be used.
   -d DATESFILE, --datesfile DATESFILE
@@ -30,4 +32,4 @@ Repository with example files `words.test` and `dates.test` for usage example: `
 The script doesn't use the same string with and without mutagen in the same password. So, if you have the words `zé` and `maria` with the `-c` mutagen, you may get `Zémaria, zémaria, zéMaria...` but  not `zéZé, mariaMaria`.
 
 
-This project is for educational purpuses only. Use at your own discretion, the contributors should not be hold responsible for any illegal activities performed with this software.
+This project is for educational purpuses only. Use at your own discretion, the contributors should not be held responsible for any illegal activities performed with this software.
