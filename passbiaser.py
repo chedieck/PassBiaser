@@ -3,15 +3,16 @@ import string
 import itertools
 
 LEET_MAP = str.maketrans('oOaAiIeE', '00441133') # does not include sS -> 5
-LEETat_MAP = str.maketrans('oOaAiIeE', '00@@1133')
+LEETAT_MAP = str.maketrans('oOaAiIeE', '00@@1133')
 
 def init_argparser():
     parser = argparse.ArgumentParser(description="Simple tool for generating password wordlists biased for certain words and dates.")
     parser.add_argument('minLen', type=int, help='minimum length for the passwords')
     parser.add_argument('maxLen', type=int, help='maximum length for the passwords')
     parser.add_argument('-u', '--upper', action='store_true', help='uppercase mutagen')
-    parser.add_argument('--leet', action='store_true', help='l33t mutagen')
+    parser.add_argument('-l', '--leet', action='store_true', help='l33t mutagen')
     parser.add_argument('--leetat', action='store_true', help='l33t mutagen with aA -> @')
+    parser.add_argument('--mix-leet', action='store_true', help="should be used with leet xor leetat. Makes, for example, 'l3et' possible")
     parser.add_argument('-c', '--capitalize', action='store_true', help='capitalize mutagen')
     parser.add_argument('--compress-md', action='store_true', help='compress months and days starting with 0 mutagen, e.g 02 -> 2')
     parser.add_argument('--compress-y', action='store_true', help='compress years from 4 digits to 2 mutagen, e.g 1978 -> 78')
@@ -24,13 +25,8 @@ def init_argparser():
     return args
 
 
-
-def gen_for_N(N, args, words, dates):
-    mandatorywords = [w for w in words if w[0] == '!']
-    words = [w if w[0] != '\\' else w for w in words]
-    pass
-
-def parse_dates (opened_file):
+# auxiliary functions
+def _parse_dates (opened_file):
     dates = opened_file.read().splitlines()
     numbers = [i for j in dates for i in j.split('-')]
     # remove the xx and xxxx
@@ -38,16 +34,45 @@ def parse_dates (opened_file):
 
     return numbers
 
-# short auxiliary function
 def _combination_len(combination_set):
     return sum([len(x) for x  in combination_set])
 
+def _mixed_leets(string, leetmap, k=0, all_mixed_leets=None):
+    # Cant set default param value of all_mixed_leets to [],
+    # Or function will save the variable state and accumulate
+    # the return value.
+    if not all_mixed_leets:
+        all_mixed_leets = []
+    for i in range(k, len(string)):
+        char = string[i]
+        if char in 'oOaAiIeE':
+            new_string_list = [*string]
+            new_string_list[i] = char.translate(leetmap)
+            new_string = ''.join(new_string_list)
+            all_mixed_leets.append(new_string)
+            all_mixed_leets = _mixed_leets(new_string, leetmap, k=i, all_mixed_leets = all_mixed_leets)
+    return all_mixed_leets
 
-#TODo minL maxL
-def combinations(args, S, minL, maxL, curr_comb=set(), ret=[]):
+def _add_leets(S, leetmap, mix=False):
+    if not mix:
+        return S | set([s.translate(leetmap) for s in S])
+
+    list_string_lists = []
+    for s in S:
+        list_string_lists.append(_mixed_leets(s, leetmap))
+
+    return  S | set([s for mixed in list_string_lists for s in mixed])
+
+#####
+
+
+
+def combinations(args, S, curr_comb=set(), ret=[]):
     """This is a very verbose funcion. The first part parses the mutagens,
     while only the second actually calculates the combinations. 
     """
+    minL = args.minLen
+    maxL = args.maxLen
     for raw_s in S: 
         #####this section parses dates####
         s_mutations = {raw_s}
@@ -58,14 +83,14 @@ def combinations(args, S, minL, maxL, curr_comb=set(), ret=[]):
                 # 2-sized digit string starting with 0 will be interpreted as a month or day
                 s_mutations.add(raw_s[1])
         if (not raw_s.isdigit()) and (args.leet or args.leetat or args.upper or args.capitalize):
-            if args.leet:
-                s_mutations.add(raw_s.translate(LEET_MAP))
-            if args.leetat:
-                s_mutations = s_mutations | set([i.translate(LEETAT_MAP) for i in s_mutations])
             if args.upper:
                 s_mutations = s_mutations | set([i.upper() for i in s_mutations])
             if args.capitalize:
                 s_mutations = s_mutations | set([i.capitalize() for i in s_mutations])
+            if args.leet:
+                s_mutations = _add_leets(s_mutations, LEET_MAP, args.mix_leet)
+            if args.leetat:
+                s_mutations = _add_leets(s_mutations, LEETAT_MAP, args.mix_leet)
         ######
         for s in s_mutations:
             new_comb = curr_comb.union({s})
@@ -74,9 +99,9 @@ def combinations(args, S, minL, maxL, curr_comb=set(), ret=[]):
             auxL = _combination_len(new_comb)
             if minL <= auxL <= maxL:
                 ret.append(new_comb)
-                ret = combinations(args, newS, minL, maxL, new_comb, ret=ret)
+                ret = combinations(args, newS, new_comb, ret=ret)
             elif auxL < minL:
-                ret = combinations(args, newS, minL, maxL, new_comb, ret=ret)
+                ret = combinations(args, newS, new_comb, ret=ret)
     return ret
 
 
@@ -89,18 +114,26 @@ def arranjos(combinations):
 
 
 def main(args):
+    #first part deals with misuse of the software
+    assert not (args.leet and args.leetat), "--leet and --leetat should not be used together."
+    fullset = []
     if args.wordsfile:
         with open(args.wordsfile, 'r') as f:
             words = f.read().splitlines()
+            fullset += words
             assert len(max(words, key=len)) <= args.maxLen, "Wordsfile incompatible with maxLen."
     if args.datesfile:
         with open(args.datesfile, 'r') as f:
-            dates = parse_dates(f)
+            dates = _parse_dates(f)
+            fullset += dates
             assert len(max(dates, key=len)) <= args.maxLen, "Datesfile incompatible with maxLen."
-    fullset = set(words + dates)
-    fullset.remove('')
+    fullset = set(fullset)
+    try:
+        fullset.remove('')
+    except KeyError:
+        pass
 
-    A = arranjos(combinations(args, fullset, args.minLen, args.maxLen))
+    A = arranjos(combinations(args, fullset))
     if args.outputfile:
         with open(args.outputfile, 'w') as f:
             f.write('\n'.join(A))
