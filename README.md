@@ -29,7 +29,7 @@ optional arguments:
 
 Repository with example files `words.test` and `dates.test` for usage example: `python passbiaser.py 8 12 -w words.test -d dates.test -c -o temp.txt`
 
-The script doesn't use the same string with and without mutagen in the same password. So, if you have the words `zé` and `maria` with the `-c` mutagen, you may get `Zémaria, zémaria, zéMaria...` but  not `zéZé, mariaMaria`.
+The script doesn't use the same string with and without mutagen in the same password. So, for example, if you have the words `zé` and `maria` with the `-c` mutagen, you may get `Zémaria, zémaria, zéMaria...` but  not `zéZé, mariaMaria`.
 
 
-This project is for educational purpuses only. Use at your own discretion, the contributors should not be held responsible for any illegal activities performed with this software.
+This project is for educational purpuses only. Use at your own discretion and do not attempt to access anything for which you don't have proper authorization. The contributors should not be held responsible for any illegal activities performed with this software.
