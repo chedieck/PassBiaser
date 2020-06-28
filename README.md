@@ -1,6 +1,6 @@
-# PassMaker
+# PassBiaser
 
-Wordlist creator with bias for words and dates.
+Robust wordlist creator with bias for words and dates.
 -
 ```
 usage: passbiaser.py [-h] [-u] [--leet] [--leetat] [-c] [--compress-md] [--compress-y] [-w WORDSFILE] [-d DATESFILE] [-o OUTPUTFILE] minLen maxLen
