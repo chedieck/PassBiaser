@@ -29,7 +29,10 @@ optional arguments:
 
 Repository with example files `words.test` and `dates.test` for usage example: `python passbiaser.py 8 12 -w words.test -d dates.test -c -o temp.txt`
 
-The script doesn't use the same string with and without mutagen in the same password. So, if you have the words `zé` and `maria` with the `-c` mutagen, you may get `Zémaria, zémaria, zéMaria...` but  not `zéZé, mariaMaria`.
+The script doesn't use the same string with and without mutagen in the same password. So, for example, if you have the words `zé` and `maria` with the `-c` mutagen, you may get `Zémaria, zémaria, zéMaria...` but  not `zéZé, mariaMaria`.
 
+The `--mix-leet` increases the outpile file by `2^(V-1)`, where `V` represents how many characters in the wordsfile are one of `aAeEiIoO`.
+
+Please feel free to test it and report bugs; also feel free to contribute.
 
 This project is for educational purpuses only. Use at your own discretion, the contributors should not be held responsible for any illegal activities performed with this software.
