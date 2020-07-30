@@ -35,4 +35,4 @@ The `--mix-leet` increases the outpile file by `2^(V-1)`, where `V` represents h
 
 Please feel free to test it and report bugs; also feel free to contribute.
 
-This project is for educational purpuses only. Use at your own discretion and do not attempt to access anything for which you don't have proper authorization. The contributors should not be held responsible for any illegal activities performed with this software.
+This project is for educational purposes only. Use at your own discretion and do not attempt to access anything for which you don't have proper authorization. The contributors should not be held responsible for any illegal activities performed with this software.
